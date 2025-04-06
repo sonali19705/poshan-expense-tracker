@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  {% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Entry - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>User Dashboard</p>
+      </div>
+      
+      <nav>
+        <ul>
+          <li><a href="{% url 'user_dashboard' %}" data-page="user-dashboard">Dashboard</a></li>
+          <li><a href="{% url 'bill_submission' %}" class="active" data-page="bill-submission">Submit Bills</a></li>
+          <li><a href="{% url 'expense_entry' %}" data-page="expense-entry">Enter Expenses</a></li>
+          <li><a href="{% url 'user_notifications' %}" data-page="notifications">Notifications</a></li>
+        </ul>
+      </nav>
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <h1>Expense Entry</h1>
+        <p>Record new expenses for your organization</p>
+      </header>
+      
+      <div class="form-container">
+        <form id="expense-form">
+          <div class="form-group">
+            <label for="organization">Organization</label>
+            <select id="organization" required>
+                <option value="">Select Organization</option>
+                {% for org in organizations %}
+                    <option value="{{ org.id }}">{{ org.organization_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+          
+          <div class="form-group">
+            <label for="expense-category">Expense Category</label>
+            <select id="expense-category" required>
+              <option value="">Select expense category</option>
+              <option value="food">Food</option>
+              <option value="transport">Transportation</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="staff">Staff Salary</option>
+              <option value="equipment">Equipment</option>
+              <option value="utilities">Utilities</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="expense-amount">Expense Amount (₹)</label>
+            <input type="number" id="expense-amount" placeholder="Enter expense amount" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="expense-date">Expense Date</label>
+            <input type="date" id="expense-date" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="expense-description">Description (Optional)</label>
+            <textarea id="expense-description" placeholder="Enter expense description" rows="3"></textarea>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="expense-cancel" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Submit Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Notification -->
+  <div id="notification" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.getElementById('expense-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Stop form from submitting normally
+
+        let formData = {
+            organization_id: document.getElementById('organization').value,  // Organization selection
+            category: document.getElementById('expense-category').value,
+            amount: document.getElementById('expense-amount').value,
+            date: document.getElementById('expense-date').value,
+            description: document.getElementById('expense-description').value
+        };
+
+        console.log("Form Data Sent:", formData); // Debug log
+
+        fetch('/expense_entry/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'  // CSRF Token for security
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Response Data:", data); // Debug log
+
+            if (data.success) {
+                Swal.fire({
+                    title: "Success!",
+                    text: "Expense Added Successfully!",
+                    icon: "success",
+                    confirmButtonText: "OK"
+                });
+                document.getElementById('expense-form').reset(); // Reset form after success
+            } else {
+                Swal.fire({
+                    title: "Error!",
+                    text: data.error,
+                    icon: "error",
+                    confirmButtonText: "OK"
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            Swal.fire({
+                title: "Error!",
+                text: "Something went wrong. Please try again.",
+                icon: "error",
+                confirmButtonText: "OK"
+            });
+        });
+    });
+</script>
+</body>
+</html>

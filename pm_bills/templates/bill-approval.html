@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+ {% load static %} 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bill Approval - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>Administrator Dashboard</p>
+      </div>
+      
+      <nav>
+        <ul>
+          <li><a href="{% url 'admin_dashboard' %}" class="active" data-page="admin-dashboard">Dashboard</a></li>
+          <li><a href="{% url 'bill_approval' %}" data-page="bill-approval">Approve Bills</a></li>
+          <li><a href="{% url 'grant_allocation' %}" data-page="grant-allocation">Allocate Grants</a></li>
+          <li><a href="{% url 'report' %}" data-page="report-generation">Generate Reports</a></li>
+          <li><a href="{% url 'organization' %}" data-page="organization-management">Manage Organizations</a></li>
+          <li><a href="{% url 'admin_notifications' %}" data-page="notifications">Notifications</a></li>
+        </ul>
+      </nav>
+      
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <h1>Bill Approval</h1>
+        <p>Review and approve pending bills</p>
+      </header>
+      
+      <div class="form-container">
+        <h2>Pending Bills</h2>
+        
+        <div class="rounded-md border" style="margin-top: 20px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background-color: #f6f7f9;">
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Bill ID</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Organization</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Amount (₹)</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Submission Date</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Description</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for bill in pending_bills %}
+                <tr style="border-bottom: 1px solid #eee;">
+                  <td style="padding: 10px;">{{ bill.id }}</td>
+                  <td style="padding: 10px;">{{ bill.organization.organization_name }}</td>
+                  <td style="padding: 10px;">₹{{ bill.bill_amount }}</td>
+                  <td style="padding: 10px;">{{ bill.submission_date }}</td>
+                  <td style="padding: 10px;">{{ bill.bill_description }}</td>
+                  <td style="padding: 10px;">
+                    <button class="btn-primary approve-btn" data-bill-id="{{ bill.id }}" style="padding: 6px 12px; margin-right: 5px;">Approve</button>
+                    <button class="btn-secondary reject-btn" data-bill-id="{{ bill.id }}" style="padding: 6px 12px;">Reject</button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Notification -->
+  <div id="notification" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".approve-btn, .reject-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            let billId = this.getAttribute("data-bill-id");
+            let action = this.classList.contains("approve-btn") ? "approve" : "reject";
+
+            fetch("/bill_approval/", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `bill_id=${billId}&action=${action}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire("Success!", data.message, "success").then(() => {
+                        location.reload(); // Refresh page after approval/rejection
+                    });
+                } else {
+                    Swal.fire("Error!", data.error || "Something went wrong!", "error");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                Swal.fire("Error!", "Failed to update bill status!", "error");
+            });
+        });
+    });
+});
+  </script>
+</body>
+</html>

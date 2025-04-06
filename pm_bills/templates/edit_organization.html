@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Organization</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert -->
+</head>
+<body>
+  <div class="edit-organization-container">
+    <h2>Edit Organization: {{ organization.name }}</h2>
+    <form id="edit-org-form" method="POST" class="edit-organization-form" data-org-id="{{ organization.id }}">
+
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="address">Address</label>
+        <input type="text" id="address" name="address" value="{{ organization.address }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="contact_person">Contact Person</label>
+        <input type="text" id="contact_person" name="contact" value="{{ organization.contact }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ organization.email }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone</label>
+        <input type="text" id="phone" name="phone" value="{{ organization.phone }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="budget">Annual Budget (₹)</label>
+        <input type="number" id="budget" name="budget" value="{{ organization.budget }}" required>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" onclick="window.history.back()">Cancel</button>
+        <button type="submit" class="btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("edit-org-form");
+      if (!form) return;
+  
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  
+        const formData = {
+          address: document.getElementById("address").value,
+          contact_person: document.getElementById("contact_person").value,
+          email: document.getElementById("email").value,
+          phone: document.getElementById("phone").value,
+          budget: document.getElementById("budget").value
+        };
+  
+        const orgId = "{{ organization.id }}";
+  
+        fetch(`/organization/edit/${orgId}/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+          body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire("Success!", "Organization Updated Successfully!", "success");
+          } else {
+            Swal.fire("Error!", data.error || "Update failed", "error");
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          Swal.fire("Error", "Something went wrong", "error");
+        });
+      });
+    });
+  </script>
+  
+
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

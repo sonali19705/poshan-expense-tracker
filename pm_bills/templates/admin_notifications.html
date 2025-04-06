@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Notifications - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>Administrator Dashboard</p>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+          <li><a href="{% url 'bill_approval' %}">Approve Bills</a></li>
+          <li><a href="{% url 'grant_allocation' %}">Allocate Grants</a></li>
+          <li><a href="{% url 'report' %}">Generate Reports</a></li>
+          <li><a href="{% url 'organization' %}">Manage Organizations</a></li>
+          <li><a href="{% url 'admin_notifications' %}" class="active">Notifications</a></li>
+        </ul>
+      </nav>
+      <button id="admin-logout" class="btn-secondary">Logout</button>
+    </div>
+
+    {% include "notifications_content.html" %}
+  </div>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

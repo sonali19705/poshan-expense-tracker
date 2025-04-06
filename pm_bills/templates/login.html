@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="page" id="login-page">
+    <div class="login-container">
+      <h1>PM Poshan Portal</h1>
+      <p>Enter your credentials to login</p>
+      
+      <form id="login-form" method="POST" action="{% url 'login' %}">
+  {% csrf_token %}
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" required>
+            <option value="user">User</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="btn-primary">Login</button>
+        
+        <div id="login-error" class="error-message"></div>
+      </form>
+      
+      <div style="margin-top: 20px; text-align: center;">
+        <p>Demo Credentials:</p>
+        <p><strong>User:</strong> user / user123</p>
+        <p><strong>Admin:</strong> admin / admin123</p>
+      </div>
+      
+      <div style="margin-top: 20px; text-align: center;">
+        <a href="index.html" class="btn-link">Back to Home</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+  
+  <script src="{% static 'js/script.js' %}"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+</body>
+</html>

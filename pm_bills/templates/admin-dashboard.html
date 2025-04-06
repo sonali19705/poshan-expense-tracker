@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>Administrator Dashboard</p>
+      </div>
+
+      <nav>
+        <ul>
+          <li><a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a></li>
+          <li><a href="{% url 'bill_approval' %}">Approve Bills</a></li>
+          <li><a href="{% url 'grant_allocation' %}">Allocate Grants</a></li>
+          <li><a href="{% url 'report' %}">Generate Reports</a></li>
+          <li><a href="{% url 'organization' %}">Manage Organizations</a></li>
+          <li><a href="{% url 'admin_notifications' %}">Notifications</a></li>
+        </ul>
+      </nav>
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <h1>Admin Dashboard</h1>
+        <p>Overview of PM Poshan system statistics</p>
+      </header>
+
+      <!-- Stats Cards -->
+      <div class="stats-container">
+        <div class="stat-card">
+          <h3>Pending Bills</h3>
+          <div class="stat-value" id="pending-bills-count">...</div>
+          <p class="stat-description">Bills requiring your approval</p>
+          <a href="{% url 'bill_approval' %}">View pending bills</a>
+        </div>
+
+        <div class="stat-card">
+          <h3>Total Grants Allocated</h3>
+          <div class="stat-value" id="grants-total">...</div>
+          <div class="stat-details">
+            <div>Utilized: <span id="grants-utilized">...</span></div>
+            <div>Remaining: <span id="grants-remaining">...</span></div>
+          </div>
+          <a href="{% url 'grant_allocation' %}">Manage grants</a>
+        </div>
+
+        <div class="stat-card">
+          <h3>Organizations</h3>
+          <div class="stat-value" id="org-count">...</div>
+          <p class="stat-description">Active organizations in the system</p>
+          <a href="{% url 'organization' %}">Manage organizations</a>
+        </div>
+      </div>
+
+      <!-- Additional Stats -->
+      <div class="additional-stats">
+        <div class="stat-card wide">
+          <h3>Bill Status Overview</h3>
+          <div class="bill-status">
+            <div class="status-item">
+              <span class="status-label">Pending Approval</span>
+              <span class="status-value pending" id="bill-pending">...</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Approved</span>
+              <span class="status-value approved" id="bill-approved">...</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Rejected</span>
+              <span class="status-value rejected" id="bill-rejected">...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card wide">
+          <h3>Quick Actions</h3>
+          <div class="quick-actions">
+            <a href="{% url 'report' %}" class="btn-secondary">Generate Reports</a>
+            <a href="{% url 'bill_approval' %}" class="btn-secondary">Approve Pending Bills</a>
+            <a href="{% url 'grant_allocation' %}" class="btn-secondary">Allocate New Grants</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const data = await window.api.getAdminDashboardData();
+
+        document.getElementById('pending-bills-count').innerText = data.pending_bills || 0;
+        document.getElementById('grants-total').innerText = `₹${data.grants_total || 0}`;
+        document.getElementById('grants-utilized').innerText = `₹${data.grants_utilized || 0}`;
+        document.getElementById('grants-remaining').innerText = `₹${data.grants_remaining || 0}`;
+        document.getElementById('org-count').innerText = data.organization_count || 0;
+
+        document.getElementById('bill-pending').innerText = data.bill_status?.pending || 0;
+        document.getElementById('bill-approved').innerText = data.bill_status?.approved || 0;
+        document.getElementById('bill-rejected').innerText = data.bill_status?.rejected || 0;
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        document.getElementById("notification-message").innerText = "Error loading dashboard data.";
+        document.getElementById("notification").classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Dashboard - PM Poshan Portal</title> 
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>User Dashboard</p>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="{% url 'user_dashboard' %}">Dashboard</a></li>
+          <li><a href="{% url 'bill_submission' %}">Submit Bills</a></li>
+          <li><a href="{% url 'expense_entry' %}">Enter Expenses</a></li>
+          <li><a href="{% url 'user_notifications' %}">Notifications</a></li>
+        </ul> 
+      </nav>
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <h1>User Dashboard</h1>
+        <p>Overview of your bills and expenses</p>
+      </header>
+
+      <!-- Stats Cards -->
+      <div class="stats-container" id="stats-container">
+        <!-- Loaded by JavaScript -->
+      </div>
+
+      <!-- Additional Stats -->
+      <div class="additional-stats">
+        <div class="stat-card wide">
+          <h3>Recent Bills</h3>
+          <ul class="activity-list" id="recent-bills-list"></ul>
+        </div>
+        <div class="stat-card wide">
+          <h3>Quick Actions</h3>
+          <div class="quick-actions">
+            <a href="{% url 'bill_submission' %}" class="btn-secondary">Submit New Bill</a>
+            <a href="{% url 'expense_entry' %}" class="btn-secondary">Record New Expense</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+
+  <!-- Static JS -->
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+
+  <!-- Dynamic Data Injection -->
+  <script>
+    const userOrganization = "{{ organization_name|escapejs }}";  // Injected from Django context
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDashboardData();
+      generateNavigation('user', 'user-dashboard');
+
+      // Dynamically fetch available funds from API
+      fetch('/api/funds/')
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          const amount = Number(data.available_funds);
+          const formatted = !isNaN(amount) ? amount.toLocaleString('en-IN') : '0';
+          document.getElementById('available-funds-value').textContent = formatted;
+        })
+        .catch(error => {
+          console.error('Error fetching available funds:', error);
+          document.getElementById('available-funds-value').textContent = '0';
+        });
+    });
+
+    async function loadDashboardData() {
+      try {
+        const [bills, expenses] = await Promise.all([
+          api.getBills(),
+          api.getExpenses()
+        ]);
+
+        console.log("User Organization:", userOrganization);
+        console.log("Fetched Bills:", bills);
+
+        const userBills = bills.filter(b => b.organizationName === userOrganization);
+
+        // Stats
+        const approved = userBills.filter(b => b.status === 'approved').length;
+        const pending = userBills.filter(b => b.status === 'pending').length;
+        const rejected = userBills.filter(b => b.status === 'rejected').length;
+        const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+        const statsHTML = `
+          <div class="stat-card">
+            <h3>Bills Submitted</h3>
+            <div class="stat-value">${userBills.length}</div>
+            <div class="stat-details">
+              <div class="approved">Approved: ${approved}</div>
+              <div class="pending">Pending: ${pending}</div>
+              <div class="rejected">Rejected: ${rejected}</div>
+            </div>
+            <a href="{% url 'bill_submission' %}">Submit new bill</a>
+          </div>
+          <div class="stat-card">
+            <h3>Total Expenses</h3>
+            <div class="stat-value">₹${totalExpenses.toLocaleString()}</div>
+            <p class="stat-description">This month's expenses</p>
+            <a href="{% url 'expense_entry' %}">Enter new expense</a>
+          </div>
+          <div class="stat-card">
+            <h3>Available Funds</h3>
+            <div class="stat-value">₹<span id="available-funds-value">0</span></div>
+            <p class="stat-description">Remaining allocated funds</p>
+          </div>
+        `;
+        document.getElementById("stats-container").innerHTML = statsHTML;
+
+        loadRecentBills(userBills);
+      } catch (err) {
+        console.error("Dashboard Load Error:", err);
+        showNotification("Failed to load dashboard data. Try again.");
+      }
+    }
+
+    function loadRecentBills(userBills) {
+      const list = document.getElementById('recent-bills-list');
+      list.innerHTML = "";
+
+      if (userBills.length === 0) {
+        list.innerHTML = "<li>No bills submitted yet.</li>";
+        return;
+      }
+
+      userBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const recent = userBills.slice(0, 5);
+
+      recent.forEach(bill => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          ${bill.description} bill of ₹${bill.amount.toLocaleString()}
+          <span class="${getStatusClass(bill.status)}">${capitalizeFirstLetter(bill.status)}</span>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function getStatusClass(status) {
+      switch (status) {
+        case 'approved': return 'approved';
+        case 'pending': return 'pending';
+        case 'rejected': return 'rejected';
+        default: return '';
+      }
+    }
+
+    function capitalizeFirstLetter(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+  </script>
+</body>
+</html>

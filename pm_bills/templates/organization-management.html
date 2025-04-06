@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organization Management - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>Administrator Dashboard</p>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a></li>
+          <li><a href="{% url 'bill_approval' %}">Approve Bills</a></li>
+          <li><a href="{% url 'grant_allocation' %}">Allocate Grants</a></li>
+          <li><a href="{% url 'report' %}">Generate Reports</a></li>
+          <li><a href="{% url 'organization' %}">Manage Organizations</a></li>
+          <li><a href="{% url 'admin_notifications' %}">Notifications</a></li>
+        </ul>
+      </nav>
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+    
+    <div class="main-content">
+      <header>
+        <h1>Organization Management</h1>
+        <p>Add and manage organizations in the system</p>
+      </header>
+      
+      <div class="form-container">
+        <h2>Add New Organization</h2>
+        <form id="organization-form" method="POST">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="org-name">Organization Name</label>
+            <input type="text" id="org-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="org-address">Address</label>
+            <textarea id="org-address" name="address" rows="3" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="org-contact">Contact Person</label>
+            <input type="text" id="org-contact" name="contact_person" required>
+          </div>
+          <div class="form-group">
+            <label for="org-email">Email</label>
+            <input type="email" id="org-email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="org-phone">Phone</label>
+            <input type="tel" id="org-phone" name="phone" required>
+          </div>
+          <div class="form-group">
+            <label for="org-budget">Annual Budget (₹)</label>
+            <input type="number" id="org-budget" name="budget" required>
+          </div>
+          <div class="form-actions">
+            <button type="reset" class="btn-secondary">Reset</button>
+            <button type="submit" class="btn-primary">Add Organization</button>
+          </div>
+        </form>
+        
+        <h2 style="margin-top: 40px;">Organizations List</h2>
+        <div class="rounded-md border" style="margin-top: 20px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background-color: #f6f7f9;">
+                <th>Organization Name</th>
+                <th>Contact Person</th>
+                <th>Email</th>
+                <th>Budget (₹)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="organization-list">
+              <!-- Organizations will be loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+  <script>
+    function getCSRFToken() {
+      return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function fetchOrganizations() {
+      fetch('/api/organizations/')
+        .then(response => response.json())
+        .then(data => {
+          let orgList = document.getElementById('organization-list');
+          orgList.innerHTML = "";
+          data.organizations.forEach(org => {
+            let row = `
+              <tr>
+                <td>${org.organization_name}</td>
+                <td>${org.contact}</td>
+                <td>${org.email}</td>
+                <td>₹${parseFloat(org.budget).toLocaleString()}</td>
+                <td>
+                  <button class="btn-primary" onclick="editOrganization(${org.id})">Edit</button>
+                  <!-- deactivateOrganization not working properly that's why kept commented -->
+                  <!-- <button class="btn-secondary" onclick="deactivateOrganization(${org.id})">Deactivate</button> -->
+                </td>
+              </tr>`;
+            orgList.innerHTML += row;
+          });
+        })
+        .catch(error => console.error('Error fetching organizations:', error));
+    }
+    
+    function editOrganization(id) {
+      console.log("Editing organization:", id);
+      window.location.href = `/organization/edit/${id}/`;
+    }
+
+    function deactivateOrganization(id) {
+      if (confirm("Are you sure you want to deactivate this organization?")) {
+        fetch(`/api/organizations/deactivate/${id}/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert("Organization deactivated successfully.");
+            fetchOrganizations();
+          } else {
+            alert("Error deactivating organization.");
+          }
+        })
+        .catch(error => console.error('Error:', error));
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchOrganizations);
+
+    document.getElementById('organization-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      let formData = {
+        organization_name: document.getElementById('org-name').value,
+        address: document.getElementById('org-address').value,
+        contact: document.getElementById('org-contact').value,
+        email: document.getElementById('org-email').value,
+        phone: document.getElementById('org-phone').value,
+        budget: document.getElementById('org-budget').value
+      };
+
+      fetch('/organization/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire("Success!", "Organization Added Successfully!", "success");
+          document.getElementById('organization-form').reset();
+          fetchOrganizations();
+        } else {
+          Swal.fire("Error!", JSON.stringify(data.error), "error");
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    });
+  </script>
+</body>
+</html>

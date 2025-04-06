@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>User Dashboard</p>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="{% url 'user_dashboard' %}">Dashboard</a></li>
+          <li><a href="{% url 'bill_submission' %}">Submit Bills</a></li>
+          <li><a href="{% url 'expense_entry' %}">Enter Expenses</a></li>
+          <li><a href="{% url 'user_notifications' %}" class="active">Notifications</a></li>
+        </ul> 
+      </nav>
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+
+    {% include "notifications_content.html" %}
+  </div>
+
+  <script src="{% static 'js/script.js' %}"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+</body>
+</html>

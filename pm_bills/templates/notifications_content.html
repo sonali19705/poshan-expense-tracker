@@ -1,0 +1,128 @@
+<div class="main-content">
+    <header>
+      <h1>Notifications</h1>
+      <p>System notifications and updates</p>
+    </header>
+  
+    <div class="form-container">
+      <div class="rounded-md border">
+        <table id="notifications-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background-color: #f6f7f9;">
+              <th style="padding: 10px;">Date</th>
+              <th style="padding: 10px;">Message</th>
+              <th style="padding: 10px;">Type</th>
+              <th style="padding: 10px;">Status</th>
+              <th style="padding: 10px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="notifications-body">
+            <!-- Rows will be populated via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      loadNotifications();
+  
+      document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('notification-action')) {
+          const action = event.target.getAttribute('data-action');
+          const id = parseInt(event.target.getAttribute('data-id'));
+          const row = event.target.closest('tr');
+  
+          if (action === 'read') {
+            markNotificationAsRead(id, row);
+          } else if (action === 'delete') {
+            deleteNotification(id, row);
+          }
+        }
+      });
+  
+      const logoutBtn = document.getElementById('logout-btn') || document.getElementById('admin-logout');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+      }
+    });
+  
+    function loadNotifications() {
+      const notificationsBody = document.getElementById('notifications-body');
+  
+      api.getNotifications()
+        .then(notifications => {
+          notificationsBody.innerHTML = '';
+  
+          notifications.forEach(notification => {
+            const row = document.createElement('tr');
+            const { id, date, message, type, status } = notification;
+  
+            if (status === 'Unread') row.style.backgroundColor = '#f0f9ff';
+  
+            row.innerHTML = `
+              <td style="padding: 10px;">${date || '-'}</td>
+              <td style="padding: 10px;">${message || '-'}</td>
+              <td style="padding: 10px;">${type || '-'}</td>
+              <td style="padding: 10px;">${status || '-'}</td>
+              <td style="padding: 10px;">
+                <button class="btn-secondary notification-action" style="padding: 6px 12px;" 
+                  data-action="${status === 'Unread' ? 'read' : 'delete'}" 
+                  data-id="${id}">
+                  ${status === 'Unread' ? 'Mark as Read' : 'Delete'}
+                </button>
+              </td>
+            `;
+            notificationsBody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error loading notifications:', error);
+          showNotification('Failed to load notifications. Please try again.');
+        });
+    }
+  
+    function markNotificationAsRead(id, row) {
+      api.markNotificationAsRead(id)
+        .then(() => {
+          row.style.backgroundColor = 'transparent';
+          const actionButton = row.querySelector('.notification-action');
+          actionButton.textContent = 'Delete';
+          actionButton.setAttribute('data-action', 'delete');
+          row.querySelector('td:nth-child(4)').textContent = 'Read';
+          showNotification('Notification marked as read.');
+        })
+        .catch(() => showNotification('Failed to update notification.'));
+    }
+  
+    function deleteNotification(id, row) {
+      api.deleteNotification(id)
+        .then(() => {
+          row.style.opacity = '0.5';
+          setTimeout(() => row.remove(), 500);
+          showNotification('Notification deleted.');
+        })
+        .catch(() => showNotification('Failed to delete notification.'));
+    }
+  
+    function showNotification(message) {
+      const toastContainer = document.getElementById('toast-container');
+      const messageElement = document.getElementById('notification-message');
+      const closeBtn = document.getElementById('notification-close');
+  
+      messageElement.textContent = message;
+      toastContainer.classList.remove('hidden');
+      closeBtn.addEventListener('click', () => toastContainer.classList.add('hidden'));
+      setTimeout(() => toastContainer.classList.add('hidden'), 3000);
+    }
+  </script>
+  

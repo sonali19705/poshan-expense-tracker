@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  {% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Bill - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>User Dashboard</p>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="{% url 'user_dashboard' %}" data-page="user-dashboard">Dashboard</a></li>
+          <li><a href="{% url 'bill_submission' %}" class="active" data-page="bill-submission">Submit Bills</a></li>
+          <li><a href="{% url 'expense_entry' %}" data-page="expense-entry">Enter Expenses</a></li>
+          <li><a href="{% url 'user_notifications' %}" data-page="notifications">Notifications</a></li>
+        </ul>
+      </nav>
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <h1>Submit New Bill</h1>
+        <p>Fill out the form to submit a new bill for approval</p>
+      </header>
+      
+      <div class="form-container">
+        <form id="bill-form">
+          <div class="form-group">
+            <label for="organization">Organization</label>
+            <select id="organization" required>
+              <option value="">Select Organization</option>
+              {% for org in organizations %}
+                  <option value="{{ org.id }}">{{ org.organization_name }}</option>
+              {% endfor %}
+          </select>
+        </div>
+          
+          <div class="form-group">
+            <label for="bill-amount">Bill Amount (₹)</label>
+            <input type="number" id="bill-amount" placeholder="Enter bill amount" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="bill-description">Bill Description</label>
+            <textarea id="bill-description" placeholder="Enter bill description" rows="4" required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Supporting Documents (Optional)</label>
+            <input type="file" id="bill-document" multiple>
+            <p class="small">Allowed formats: PDF, PNG, JPG, DOCX (MAX. 10MB each)</p>
+            <div id="file-preview"></div>
+        </div>
+          
+          <div class="form-group">
+            <label for="submission-date">Submission Date</label>
+            <input type="date" id="submission-date" required>
+
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="bill-cancel" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Submit Bill</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Notification -->
+  <div id="notification" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+      document.getElementById('bill-form').addEventListener('submit', function(event) {
+          event.preventDefault(); // Stop default form submission
+  
+          let formData = new FormData();
+          formData.append('organization_id', document.getElementById('organization').value); // Fix: Use ID instead of name
+          formData.append('bill_amount', document.getElementById('bill-amount').value);
+          formData.append('bill_description', document.getElementById('bill-description').value);
+          formData.append('submission_date', new Date().toISOString().split('T')[0]); // Get today's date
+  
+          let fileInput = document.getElementById('bill-document');
+          if (fileInput.files.length > 0) {
+              formData.append('bill_document', fileInput.files[0]); // Append file if selected
+          }
+  
+          fetch('/bill_submission/', {
+              method: 'POST',
+              headers: {
+                  'X-CSRFToken': '{{ csrf_token }}'  // CSRF Token for security
+              },
+              body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+              console.log("Response Data:", data); // Debugging log
+              if (data.success) {
+                  Swal.fire({
+                      title: "Success!",
+                      text: "Bill Submitted Successfully!",
+                      icon: "success",
+                      confirmButtonText: "OK"
+                  });
+                  document.getElementById('bill-form').reset(); // Reset form after success
+              } else {
+                  Swal.fire({
+                      title: "Error!",
+                      text: data.error || "Something went wrong!",
+                      icon: "error",
+                      confirmButtonText: "OK"
+                  });
+              }
+          })
+          .catch(error => {
+              console.error("Error:", error);
+              Swal.fire({
+                  title: "Error!",
+                  text: "Failed to submit bill. Try again!",
+                  icon: "error",
+                  confirmButtonText: "OK"
+              });
+          });
+      });
+  
+      // Fix: Allow file preview and validation
+      document.getElementById('bill-document').addEventListener('change', function(event) {
+          let filePreview = document.getElementById('file-preview');
+          filePreview.innerHTML = ''; // Clear previous files
+  
+          let files = event.target.files;
+          for (let i = 0; i < files.length; i++) {
+              let file = files[i];
+  
+              // Validate file type
+              let allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+              if (!allowedTypes.includes(file.type)) {
+                  Swal.fire("Invalid File", `File type not allowed: ${file.name}`, "error");
+                  continue;
+              }
+  
+              // Validate file size (10MB max)
+              if (file.size > 10 * 1024 * 1024) {
+                  Swal.fire("File Too Large", `File size exceeds limit: ${file.name}`, "error");
+                  continue;
+              }
+  
+              let fileItem = document.createElement('p');
+              fileItem.textContent = `✔️ ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+              filePreview.appendChild(fileItem);
+          }
+      });
+  
+  </script>
+</body>
+</html>

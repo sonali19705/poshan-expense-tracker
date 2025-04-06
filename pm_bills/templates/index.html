@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+</head>
+<body>
+  <div class="min-h-screen flex flex-col">
+    <!-- Hero Section -->
+    <section class="flex-1 flex flex-col items-center justify-center p-6 animate-fade-in">
+      <div class="max-w-4xl mx-auto text-center space-y-8">
+        <div class="space-y-4">
+          <h1 class="text-4xl font-bold tracking-tight animate-slide-up">
+            PM Poshan Portal
+          </h1>
+          <p class="text-xl text-muted-foreground max-w-2xl mx-auto animate-slide-up">
+            A comprehensive system for managing bills, grants, and expenses for the Prime Minister's Poshan Abhiyaan program.
+          </p>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up">
+          <a href="{% url 'login' %}" class="btn-primary">Get Started</a>
+          <a href="#about" class="btn-secondary">Learn More</a>
+        </div>
+      </div>
+    </section>
+    
+    <!-- About Section -->
+    <section id="about" class="py-16 px-6 bg-muted/30">
+      <div class="max-w-4xl mx-auto space-y-12">
+        <div class="text-center space-y-4">
+          <h2 class="text-3xl font-bold tracking-tight">About the System</h2>
+          <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+            The PM Poshan Portal is designed to streamline the management of bills, grants, and expenses for organizations participating in the Prime Minister's Poshan Abhiyaan program.
+          </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="text-xl font-medium mb-3">Bill Management</h3>
+            <p class="text-muted-foreground">
+              Submit and track bills through an efficient approval process.
+            </p>
+          </div>
+          
+          <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="text-xl font-medium mb-3">Grant Allocation</h3>
+            <p class="text-muted-foreground">
+              Manage and monitor grant allocation to participating organizations.
+            </p>
+          </div>
+          
+          <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <h3 class="text-xl font-medium mb-3">Report Generation</h3>
+            <p class="text-muted-foreground">
+              Generate comprehensive reports including MIS and Monthly Patrak.
+            </p>
+          </div>
+        </div>
+        
+        <div class="text-center pt-8">
+          <a href="{% url 'login' %}" class="btn-primary">Get Started</a>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="py-8 px-6 border-t border-border">
+      <div class="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
+        <p>&copy; <span id="current-year"></span> PM Poshan Portal. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+  
+  
+</body>
+</html>

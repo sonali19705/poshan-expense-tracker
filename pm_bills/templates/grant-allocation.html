@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grant Allocation - PM Poshan Portal</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>PM Poshan Portal</h2>
+        <p>Administrator Dashboard</p>
+      </div>
+      
+      <nav>
+        <ul>
+          <li><a href="{% url 'admin_dashboard' %}" data-page="admin-dashboard">Dashboard</a></li>
+          <li><a href="{% url 'bill_approval' %}" data-page="bill-approval">Approve Bills</a></li>
+          <li><a href="{% url 'grant_allocation' %}" class="active" data-page="grant-allocation">Allocate Grants</a></li>
+          <li><a href="{% url 'report' %}" data-page="report-generation">Generate Reports</a></li>
+          <li><a href="{% url 'organization' %}" data-page="organization-management">Manage Organizations</a></li>
+          <li><a href="{% url 'admin_notifications' %}" data-page="notifications">Notifications</a></li>
+        </ul>
+      </nav>
+      
+      <div style="padding: 20px;">
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <h1>Grant Allocation</h1>
+        <p>Manage and track grant allocations to organizations</p>
+      </header>
+      
+      <div class="form-container">
+        <h2>Allocate New Grant</h2>
+        
+        <form id="grant-form">
+          <div class="form-group">
+            <label for="organization-select">Select Organization</label>
+            <select id="organization-select" required>
+              <option value="">Select an organization</option>
+              {% for org in organizations %}
+                <option value="{{ org.id }}">{{ org.organization_name }} (Budget: ₹{{ org.budget }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="grant-amount">Grant Amount (₹)</label>
+            <input type="number" id="grant-amount" placeholder="Enter grant amount" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="grant-date">Allocation Date</label>
+            <input type="date" id="grant-date" required>
+          </div>
+          
+          <div class="form-actions">
+            <button type="reset" class="btn-secondary">Reset</button>
+            <button type="submit" class="btn-primary">Allocate Grant</button>
+          </div>
+        </form>
+        
+        <h2 style="margin-top: 40px;">Grant Allocation History</h2>
+        
+        <div class="rounded-md border" style="margin-top: 20px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background-color: #f6f7f9;">
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Allocation ID</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Organization</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Amount (₹)</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Date</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="allocation-history">
+              {% for allocation in allocations %}
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px;">ALLOC-{{ allocation.id }}</td>
+                <td style="padding: 10px;">{{ allocation.organization.organization_name }}</td>
+                <td style="padding: 10px;">₹{{ allocation.amount }}</td>
+                <td style="padding: 10px;">{{ allocation.allocation_date }}</td>
+                <td style="padding: 10px;"><span class="approved">Completed</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Notification -->
+  <div id="notification" class="notification hidden">
+    <div class="notification-content">
+      <p id="notification-message"></p>
+      <button id="notification-close">&times;</button>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{% static 'js/api.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+  <script>
+    $(document).ready(function () {
+      $("#grant-form").submit(function (event) {
+          event.preventDefault();  // Prevent default form submission
+  
+          let orgId = $("#organization-select").val();
+          let grantAmount = $("#grant-amount").val();
+          let grantDate = $("#grant-date").val();
+  
+          if (!orgId || !grantAmount || !grantDate) {
+              alert("⚠️ Please fill out all fields.");
+              return;
+          }
+  
+          $.ajax({
+              type: "POST",
+              url: "{% url 'grant_allocation' %}",
+              contentType: "application/json",
+              data: JSON.stringify({
+                  organization_id: orgId,
+                  grant_amount: grantAmount,
+                  allocation_date: grantDate
+              }),
+              headers: { "X-CSRFToken": "{{ csrf_token }}" }, // Include CSRF token
+              success: function (response) {
+                  if (response.success) {
+                      alert("✅ Grant allocated successfully!");
+                      location.reload();  // Refresh page to show new data
+                  } else {
+                      alert("❌ Error: " + response.error);
+                  }
+              },
+              error: function (xhr) {
+                  alert("❌ Server Error: " + xhr.responseText);
+              }
+          });
+      });
+    });
+  </script>
+</body>
+</html>
