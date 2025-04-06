@@ -138,8 +138,10 @@ def admin_dashboard(request):
 def bill_approval(request):
     if request.method == "POST":
         bill_id = request.POST.get("bill_id")
-        bill = get_object_or_404(Bill, id=bill_id)
         action = request.POST.get("action")  # "approve" or "reject"
+
+        # Get Bill instance
+        bill = get_object_or_404(Bill, id=bill_id)
 
         # Update status based on action
         if action == "approve":
@@ -154,18 +156,13 @@ def bill_approval(request):
             return JsonResponse({"success": False, "message": "Invalid action."}, status=400)
 
         bill.save()
-
-        # ✅ Only call notify_user inside POST block
-        notify_user(
-            bill.submitted_by,
-            notif_msg,
-            notif_type.capitalize(),
-            link="/user/bills/"
-        )
-
+        
+        # Return JSON or redirect (you can use either)
         return JsonResponse({"success": True, "message": f"Bill {action}d successfully!"})
+    notify_user(bill.submitted_by, "Your bill has been approved.", "Success", link="/user/bills/")
 
-    # For GET requests: show pending bills (no notify_user here!)
+
+    # If GET request, fetch all pending bills
     pending_bills = Bill.objects.filter(status="pending")
     return render(request, "bill-approval.html", {"pending_bills": pending_bills})
 
