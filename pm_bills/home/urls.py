@@ -17,7 +17,7 @@ urlpatterns = [
     path('api/organization/', views.api_organization, name='api_organization'),
     path('api/notifications/', views.get_notifications),
 
-    path('user_notifications/user   ', views.user_notifications_view, name='user_notifications'),
+    path('user_notifications/user', views.user_notifications_view, name='user_notifications'),
     path('admin_notifications/admin', views.admin_notifications_view, name='admin_notifications'),
     path('api/notifications/<int:id>/read/', views.mark_notification_as_read, name='mark_notification_as_read'),
     path('api/notifications/<int:id>/delete/', views.delete_notification, name='delete_notification'),

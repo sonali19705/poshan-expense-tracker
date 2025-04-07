@@ -14,7 +14,6 @@ from django.contrib.admin.views.decorators import staff_member_required
 from .utils import generate_pdf_report, generate_excel_report, generate_csv_report
 from .utils import notify_admins,notify_user
 from .models import Expense, GrantAllocation, OrganizationDetails, Bill, ReportHistory,Notification
-from . import models
 from django.db.models import Sum
 from django.utils.dateformat import format as date_format 
 
@@ -113,23 +112,37 @@ def login_view(request):
 def user_dashboard(request):
     return render(request,'user-dashboard.html')
 
+
 def user_dashboard_api(request):
     user = request.user
-     
-    bills = Bill.objects.filter(user=request.user)
+    organization = getattr(user, 'OrganizationDetails', None)  
+    bills = Bill.objects.filter(user=user)
     expenses = Expense.objects.filter(user=user)
+
+    # Sum user-specific expenses
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or 0
+    total_grants = 0
+
+    # Sum organization-wide grants
+    if organization:
+        total_grants = GrantAllocation.objects.filter(organization=organization).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Available funds = grants for org - user's expenses
+    available_funds = total_grants - total_expenses
 
     response_data = {
         'bills_count': bills.count(),
         'approved_bills': bills.filter(status='approved').count(),
         'pending_bills': bills.filter(status='pending').count(),
         'rejected_bills': bills.filter(status='rejected').count(),
-        'total_expenses': sum(expense.amount for expense in expenses),
-        'available_funds': 560000,  # Replace with actual data
+        'total_expenses': total_expenses,
+        'total_grants': total_grants,
+        'available_funds': available_funds,
         'bills': list(bills.values('bill_description', 'bill_amount', 'status'))
     }
 
     return JsonResponse(response_data)
+
 
 def admin_dashboard(request):
     return render(request,'admin-dashboard.html')
@@ -156,11 +169,16 @@ def bill_approval(request):
             return JsonResponse({"success": False, "message": "Invalid action."}, status=400)
 
         bill.save()
-        
-        # Return JSON or redirect (you can use either)
-        return JsonResponse({"success": True, "message": f"Bill {action}d successfully!"})
-    notify_user(bill.submitted_by, "Your bill has been approved.", "Success", link="/user/bills/")
 
+        # 🔔 Create notification
+        Notification.objects.create(
+            user=bill.user,
+            message=notif_msg,
+            type=notif_type,
+            status='Unread'
+        )
+
+        return JsonResponse({"success": True, "message": f"Bill {action}d successfully!"})
 
     # If GET request, fetch all pending bills
     pending_bills = Bill.objects.filter(status="pending")
